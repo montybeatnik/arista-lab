@@ -1,3 +1,9 @@
+# Arista CLAB Lab
+
+## Setup Steps
+1. Download ubuntu image 
+2. Create new VM with image in VirtualBox 
+
 ╭──────────────────────────────┬─────────────────────┬─────────┬───────────────────╮
 │             Name             │      Kind/Image     │  State  │   IPv4/6 Address  │
 ├──────────────────────────────┼─────────────────────┼─────────┼───────────────────┤
