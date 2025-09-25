@@ -107,3 +107,12 @@ Local VTEP Configuration Check       FAIL
   Flood List                         FAIL   No flood list configured
   Flood List                         FAIL   No remote VTEP in VLAN 10
 ```
+
+### Unable to start lab try this:
+```bash
+# inside the VM
+mkdir -p ~/.clab-runs
+export CLAB_LABDIR_BASE="$HOME/.clab-runs"   # where Containerlab will write the clab-<name>/ dir
+sudo -E containerlab destroy -t ~/lab/lab.clab.yml || true
+sudo -E containerlab deploy  -t ~/lab/lab.clab.yml --reconfigure
+```

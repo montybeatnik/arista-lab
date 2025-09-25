@@ -1,4 +1,4 @@
-SW=172.20.20.7          # switch mgmt IP/hostname
+SW=172.20.20.9          # switch mgmt IP/hostname
 USER=admin              # your creds
 PASS=admin
 
