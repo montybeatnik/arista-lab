@@ -75,11 +75,22 @@ func (c eosClient) run(reqBody []byte) {
 	// fmt.Println("Body:", string(body))
 
 	var bgpEvpnSummaryResp arista.BGPEvpnSummaryResponse
-	if err := json.Unmarshal(body, &resp); err != nil {
+	if err := json.Unmarshal(body, &bgpEvpnSummaryResp); err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("%+v", bgpEvpnSummaryResp)
+	for _, result := range bgpEvpnSummaryResp.Result {
+		for _, vrf := range result.Vrfs {
+			fmt.Println(vrf.ASN)
+			for k, v := range vrf.Peers {
+				fmt.Println(k)
+				fmt.Printf("prefix rcvd: %v\n", v.PrefixReceived)
+				fmt.Printf("prefix adv: %v\n", v.PrefixAdvertised)
+				// fmt.Printf("neighbor: %v\n")
+			}
+		}
+	}
+
 }
 
 func main() {
