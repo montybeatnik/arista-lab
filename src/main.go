@@ -12,6 +12,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	arista "github.com/montybeatnik/arista-lab/laber/pkgs"
 )
 
 type stringSlice []string
@@ -97,7 +99,16 @@ func (c eosClient) run(reqBody []byte) {
 		fmt.Println("Error reading response body:", err)
 		return
 	}
-	fmt.Println("Body:", string(body))
+
+	var bgpEvpnSummaryResp arista.BGPEvpnSummaryResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		panic(err)
+	}
+
+	vrf := bgpEvpnSummaryResp.Result[0].Vrfs["default"]
+	for nbr, p := range vrf.Peers {
+		fmt.Printf("Peer %s state=%s rx=%d tx=%d\n", nbr, p.PeerState, p.MsgReceived, p.MsgSent)
+	}
 }
 
 func main() {
