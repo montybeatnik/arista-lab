@@ -100,7 +100,7 @@ func (c eosClient) run(reqBody []byte) {
 		return
 	}
 
-	fmt.Println("Body:", string(body))
+	// fmt.Println("Body:", string(body))
 
 	var bgpEvpnSummaryResp arista.BGPEvpnSummaryResponse
 	if err := json.Unmarshal(body, &resp); err != nil {
