@@ -8,12 +8,11 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
-	"text/template"
 	"time"
 
-	arista "github.com/montybeatnik/arista-lab/laber/pkgs"
+	"github.com/montybeatnik/arista-lab/laber/pkgs/arista"
+	"github.com/montybeatnik/arista-lab/laber/pkgs/renderer"
 )
 
 type stringSlice []string
@@ -22,33 +21,6 @@ func (s *stringSlice) String() string { return strings.Join(*s, ",") }
 func (s *stringSlice) Set(v string) error {
 	*s = append(*s, v)
 	return nil
-}
-
-type PayloadData struct {
-	Method  string
-	Version int
-	Format  string
-	Cmds    []string
-	ID      int
-}
-
-func renderTemplate(tplPath string, data PayloadData) ([]byte, error) {
-	funcs := template.FuncMap{
-		"toJSON": func(v any) (string, error) {
-			b, err := json.Marshal(v)
-			return string(b), err
-		},
-	}
-	base := filepath.Base(tplPath)
-	tpl, err := template.New(base).Funcs(funcs).ParseFiles(tplPath)
-	if err != nil {
-		return nil, fmt.Errorf("parse template: %w", err)
-	}
-	var buf bytes.Buffer
-	if err := tpl.ExecuteTemplate(&buf, base, data); err != nil {
-		return nil, fmt.Errorf("execute template: %w", err)
-	}
-	return buf.Bytes(), nil
 }
 
 type eosClient struct {
@@ -116,7 +88,7 @@ func main() {
 	client := newEosClient(url)
 	tmplPath := "src/templates/eapi_payload.tmpl"
 	fmt.Println("rendering template...")
-	body, err := renderTemplate(tmplPath, PayloadData{
+	body, err := renderer.RenderTemplate(tmplPath, arista.PayloadData{
 		Method:  "runCmds",
 		Version: 1,
 		Format:  "json",
