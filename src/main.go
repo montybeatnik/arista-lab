@@ -107,7 +107,7 @@ func (c eosClient) run(reqBody []byte) {
 		panic(err)
 	}
 
-	fmt.Printf("%+v", bgpEvpnSummaryResp``)
+	fmt.Printf("%+v", bgpEvpnSummaryResp)
 }
 
 func main() {
