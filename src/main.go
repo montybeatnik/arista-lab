@@ -107,10 +107,7 @@ func (c eosClient) run(reqBody []byte) {
 		panic(err)
 	}
 
-	vrf := bgpEvpnSummaryResp.Result[0].Vrfs["default"]
-	for nbr, p := range vrf.Peers {
-		fmt.Printf("Peer %s state=%s rx=%d tx=%d\n", nbr, p.PeerState, p.MsgReceived, p.MsgSent)
-	}
+	fmt.Printf("%+v", bgpEvpnSummaryResp``)
 }
 
 func main() {
