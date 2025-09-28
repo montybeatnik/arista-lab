@@ -25,6 +25,40 @@
   </div>
 </form>
 
+<h2>Run commands on cEOS</h2>
+<form id="execForm">
+  <div class="row">
+    <label>Username <input id="euser" type="text" value="admin"></label>
+    <label>Password <input id="epass" type="password" value="admin"></label>
+    <label>Format
+      <select id="fmt">
+        <option value="json" selected>json</option>
+        <option value="text">text</option>
+      </select>
+    </label>
+  </div>
+  <label>
+    Commands (one per line)
+    <textarea id="cmds" rows="4">show bgp evpn summary
+show vxlan vtep</textarea>
+  </label>
+  <button id="runCmdsBtn" type="submit">Run on all cEOS</button>
+</form>
+
+<section id="execOut" hidden>
+  <h3>Command results</h3>
+  <div id="execResults"></div>
+</section>
+
+<h2>Health check</h2>
+<form id="healthForm">
+  <button id="healthBtn" type="submit">Run EVPN health</button>
+</form>
+<section id="healthOut" hidden>
+  <h3>Node health</h3>
+  <div id="healthResults"></div>
+</section>
+
 <section id="result" hidden>
   <h2>Nodes (<span id="labKey"></span>)</h2>
   <table id="nodesTbl">

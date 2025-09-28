@@ -3,20 +3,25 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"embed"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
+	"io"
 	"io/fs"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
-)
 
-// ======= Data models (same as before) =======
+	"github.com/montybeatnik/arista-lab/laber/pkgs/arista"
+	"github.com/montybeatnik/arista-lab/laber/pkgs/renderer"
+)
 
 type InspectResult map[string][]ContainerInfo
 
@@ -185,6 +190,279 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
+func runCmdHandler(cfg serverCfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cmds := []string{"show bgp summary"}
+		url := "https://172.20.20.9/command-api"
+		client := arista.NewEosClient(url)
+		tmplPath := "templates/eapi_payload.tmpl"
+		fmt.Println("rendering template...")
+		body, err := renderer.RenderTemplate(tmplPath, arista.PayloadData{
+			Method:  "runCmds",
+			Version: 1,
+			Format:  "json",
+			Cmds:    cmds,
+		})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("running cmd...")
+		client.Run(body)
+	}
+}
+
+// ----- Health API -----
+
+type HealthReq struct {
+	Lab        string `json:"lab"`
+	UseSudo    bool   `json:"sudo"`
+	TimeoutSec int    `json:"timeoutSec"`
+	User       string `json:"user"`
+	Pass       string `json:"pass"`
+}
+
+type HealthCheck struct {
+	Name   string `json:"name"`
+	Result string `json:"result"` // PASS|WARN|FAIL
+	Detail string `json:"detail,omitempty"`
+}
+
+type NodeHealth struct {
+	Name   string        `json:"name"`
+	IP     string        `json:"ip"`
+	Checks []HealthCheck `json:"checks"`
+}
+
+type HealthResp struct {
+	OK    bool         `json:"ok"`
+	Error string       `json:"error,omitempty"`
+	Nodes []NodeHealth `json:"nodes,omitempty"`
+}
+
+func ceosNodesFromInspect(out []byte) (nodes []ContainerInfo, err error) {
+	var parsed InspectResult
+	if err = json.Unmarshal(out, &parsed); err != nil {
+		return nil, err
+	}
+	for _, list := range parsed {
+		for _, n := range list {
+			if strings.EqualFold(n.Kind, "ceos") && n.IPv4 != "" {
+				nodes = append(nodes, n)
+			}
+		}
+		break // first (and only) lab key
+	}
+	return
+}
+
+// simple helpers
+
+func cidrIP(s string) string {
+	// "172.20.20.7/24" -> "172.20.20.7"
+	if i := strings.IndexByte(s, '/'); i > 0 {
+		return s[:i]
+	}
+	return s
+}
+
+func onlyNonEmpty(ss []string) (out []string) {
+	for _, s := range ss {
+		if strings.TrimSpace(s) != "" {
+			out = append(out, strings.TrimSpace(s))
+		}
+	}
+	return
+}
+
+func eapiRun(ctx context.Context, ip, user, pass string, cmds []string, format string) (status int, body []byte, err error) {
+	if format == "" {
+		format = "json"
+	}
+	payload := map[string]any{
+		"jsonrpc": "2.0",
+		"method":  "runCmds",
+		"params": map[string]any{
+			"version": 1,
+			"format":  format,
+			"cmds":    cmds,
+		},
+		"id": 1,
+	}
+	b, _ := json.Marshal(payload)
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // lab only
+	}
+	client := &http.Client{Transport: tr}
+	url := "https://" + ip + "/command-api"
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(b))
+	if err != nil {
+		return 0, nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if user != "" || pass != "" {
+		req.SetBasicAuth(user, pass)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, nil, err
+	}
+	defer resp.Body.Close()
+	body, err = io.ReadAll(resp.Body)
+	return resp.StatusCode, body, err
+}
+
+func healthHandler(cfg serverCfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		var req HealthReq
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeJSON(w, http.StatusBadRequest, HealthResp{OK: false, Error: "bad JSON: " + err.Error()})
+			return
+		}
+		labAbs, err := cfg.sanitizeLabPath(req.Lab)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, HealthResp{OK: false, Error: err.Error()})
+			return
+		}
+
+		tout := time.Duration(req.TimeoutSec) * time.Second
+		if tout <= 0 || tout > 60*time.Second {
+			tout = 20 * time.Second
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), tout)
+		defer cancel()
+		out, err := runInspect(ctx, labAbs, req.UseSudo)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, HealthResp{OK: false, Error: "inspect failed: " + err.Error()})
+			return
+		}
+		nodes, err := ceosNodesFromInspect(out)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, HealthResp{OK: false, Error: "parse inspect: " + err.Error()})
+			return
+		}
+		if len(nodes) == 0 {
+			writeJSON(w, http.StatusOK, HealthResp{OK: true, Nodes: nil})
+			return
+		}
+
+		// The checks we’ll run per node
+		checkCmds := []string{
+			"show bgp evpn summary",
+			"show vxlan vtep",
+			"show bgp evpn route-type mac-ip",
+		}
+
+		type item struct {
+			i  int
+			nh NodeHealth
+		}
+		sem := make(chan struct{}, 5)
+		var wg sync.WaitGroup
+		ch := make(chan item, len(nodes))
+
+		for i, n := range nodes {
+			wg.Add(1)
+			go func(i int, n ContainerInfo) {
+				defer wg.Done()
+				sem <- struct{}{}
+				defer func() { <-sem }()
+
+				ip := cidrIP(n.IPv4)
+				cx, cancel := context.WithTimeout(r.Context(), tout)
+				defer cancel()
+
+				status, body, err := eapiRun(cx, ip, req.User, req.Pass, checkCmds, "json")
+				h := NodeHealth{Name: n.Name, IP: ip}
+
+				if err != nil || status < 200 || status >= 300 {
+					h.Checks = append(h.Checks, HealthCheck{
+						Name:   "eAPI reachability",
+						Result: "FAIL",
+						Detail: fmt.Sprintf("status=%d err=%v", status, err),
+					})
+					ch <- item{i: i, nh: h}
+					return
+				}
+
+				// Parse minimal fields from body
+				type rpc struct {
+					Result []map[string]any `json:"result"`
+				}
+				var rp rpc
+				if json.Unmarshal(body, &rp) != nil || len(rp.Result) < 3 {
+					h.Checks = append(h.Checks, HealthCheck{Name: "parse", Result: "WARN", Detail: "unexpected eAPI response"})
+					ch <- item{i: i, nh: h}
+					return
+				}
+
+				// 1) EVPN neighbors established?
+				pass1 := false
+				if vrfs, ok := rp.Result[0]["vrfs"].(map[string]any); ok {
+					for _, v := range vrfs {
+						if m, ok := v.(map[string]any); ok {
+							if peers, ok := m["peers"].(map[string]any); ok {
+								for _, p := range peers {
+									if pm, ok := p.(map[string]any); ok {
+										if st, _ := pm["peerState"].(string); st == "Established" {
+											pass1 = true
+											break
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				h.Checks = append(h.Checks, HealthCheck{
+					Name:   "EVPN neighbors",
+					Result: map[bool]string{true: "PASS", false: "FAIL"}[pass1],
+					Detail: map[bool]string{true: "at least one Established", false: "none Established"}[pass1],
+				})
+
+				// 2) VTEPs learnt?
+				pass2 := false
+				if m, ok := rp.Result[1]["vteps"].([]any); ok && len(m) > 0 {
+					pass2 = true
+				}
+				h.Checks = append(h.Checks, HealthCheck{
+					Name:   "VXLAN VTEPs",
+					Result: map[bool]string{true: "PASS", false: "WARN"}[pass2],
+					Detail: map[bool]string{true: "remote VTEPs present", false: "no remote VTEPs"}[pass1],
+				})
+
+				// 3) Any MAC/IP routes?
+				pass3 := false
+				if routes, ok := rp.Result[2]["routes"].([]any); ok && len(routes) > 0 {
+					pass3 = true
+				}
+				h.Checks = append(h.Checks, HealthCheck{
+					Name:   "EVPN MAC/IP",
+					Result: map[bool]string{true: "PASS", false: "WARN"}[pass3],
+					Detail: map[bool]string{true: "mac-ip entries found", false: "no mac-ip entries"}[pass1],
+				})
+
+				ch <- item{i: i, nh: h}
+			}(i, n)
+		}
+		go func() { wg.Wait(); close(ch) }()
+
+		results := make([]NodeHealth, len(nodes))
+		for it := range ch {
+			results[it.i] = it.nh
+		}
+		writeJSON(w, http.StatusOK, HealthResp{OK: true, Nodes: results})
+	}
+}
+
 func main() {
 	cfg := serverCfg{
 		Listen:  ":8080",
@@ -202,6 +480,8 @@ func main() {
 	// Pages & API
 	mux.HandleFunc("/", indexHandler(cfg, t))
 	mux.HandleFunc("/inspect", inspectHandler(cfg))
+	mux.HandleFunc("/runcmd", runCmdHandler(cfg))
+	mux.HandleFunc("/health", healthHandler(cfg))
 
 	srv := &http.Server{
 		Addr:              cfg.Listen,
