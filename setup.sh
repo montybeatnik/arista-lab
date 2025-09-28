@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
+trap 'echo "ERROR on line $LINENO. Exiting." >&2' ERR
+
+# Go toolchain (ARM64) — change version if you like
+GO_VERSION="1.23.1"
+GO_TGZ="go${GO_VERSION}.linux-arm64.tar.gz"
 
 ### ───────────────────────────
 ### EDIT THESE FOR YOUR SETUP
@@ -24,12 +29,34 @@ AUTO_DEPLOY=1
 LAB_FILE="lab.clab.yml"         # path inside your REPO_DIR
 
 ### ───────────────────────────
-### sanity checks
+### helpers
 ### ───────────────────────────
-err() { echo "ERROR: $*" >&2; exit 1; }
+err()  { echo "ERROR: $*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || err "Missing dependency '$1' on host."; }
 
+ensure_multipassd() {
+  # If the daemon/socket isn’t ready, try to start it without failing the whole run.
+  if ! multipass list >/dev/null 2>&1; then
+    echo ">>> Starting multipassd..."
+    if command -v launchctl >/dev/null 2>&1; then
+      sudo launchctl kickstart -k system/com.canonical.multipassd || true
+    fi
+    # Open the app as a fallback (often triggers required macOS prompts)
+    open -ga "Multipass.app" >/dev/null 2>&1 || true
+    sleep 2
+    multipass list >/dev/null 2>&1 || err "Cannot connect to multipassd. Please open Multipass.app once and re-run."
+  fi
+}
+
+mounted_repo() {
+  multipass info "$VM_NAME" 2>/dev/null | grep -q "/home/ubuntu/lab"
+}
+
+### ───────────────────────────
+### sanity checks
+### ───────────────────────────
 need multipass
+ensure_multipassd
 
 [[ -d "$REPO_DIR" ]] || err "REPO_DIR not found: $REPO_DIR"
 [[ -f "$REPO_DIR/$LAB_FILE" ]] || err "Lab file not found at: $REPO_DIR/$LAB_FILE"
@@ -54,19 +81,15 @@ multipass exec "$VM_NAME" -- cloud-init status --wait
 ### ───────────────────────────
 ### mount repo & transfer cEOS tarball
 ### ───────────────────────────
-# Mount your repo into the VM at ~/lab
-if multipass mount --help | grep -q "mount"; then
+if mounted_repo; then
+  echo ">>> Repo already mounted at ~/lab"
+else
   echo ">>> Mounting repo -> $VM_NAME:~/lab"
   multipass mount "$REPO_DIR" "$VM_NAME":/home/ubuntu/lab
-else
-  err "Your multipass doesn't support 'mount'. Update Multipass or copy files manually."
 fi
 
-# Ensure images dir exists
+echo ">>> Ensuring ~/images exists and transferring cEOS tarball"
 multipass exec "$VM_NAME" -- bash -lc "mkdir -p ~/images"
-
-# Transfer the cEOS tarball (multipass mount expects directories; use transfer for a file)
-echo ">>> Transferring cEOS tarball into VM ~/images/"
 multipass transfer "$CEOS_TARBALL" "$VM_NAME":/home/ubuntu/images/
 
 ### ───────────────────────────
@@ -81,7 +104,7 @@ multipass exec "$VM_NAME" -- bash -lc '
   # Docker (convenience script)
   if ! command -v docker >/dev/null 2>&1; then
     curl -fsSL https://get.docker.com | sh
-    sudo usermod -aG docker ubuntu
+    sudo usermod -aG docker ubuntu || true
   fi
 
   # Containerlab
@@ -95,35 +118,40 @@ multipass exec "$VM_NAME" -- bash -lc '
 '
 
 ### ───────────────────────────
-### import cEOS image, sanity check arch
+### import cEOS image (ARM64), verify arch
 ### ───────────────────────────
 echo ">>> Importing cEOS Docker image as $CEOS_TAG ..."
 multipass exec "$VM_NAME" -- bash -lc "
   set -euo pipefail
   ls -lh ~/images
-  # Import (idempotent-ish; will re-create if the tag doesn't exist)
-  if ! docker image inspect '$CEOS_TAG' >/dev/null 2>&1; then
-    docker import ~/images/$(basename "$CEOS_TARBALL") '$CEOS_TAG'
+  if ! sudo docker image inspect '$CEOS_TAG' >/dev/null 2>&1; then
+    sudo docker import ~/images/$(basename "$CEOS_TARBALL") '$CEOS_TAG'
   else
     echo 'Docker image $CEOS_TAG already present, skipping import.'
   fi
 
   echo '>>> Verifying image arch...'
-  IMG_ARCH=\$(docker inspect '$CEOS_TAG' --format '{{.Architecture}}')
+  IMG_ARCH=\$(sudo docker inspect '$CEOS_TAG' --format '{{.Architecture}}')
   HOST_ARCH=\$(uname -m)
   echo \"Image arch: \$IMG_ARCH | Host arch: \$HOST_ARCH\"
-  # Acceptable mappings: arm64 <-> aarch64
   if [[ \"\$IMG_ARCH\" != \"arm64\" && \"\$IMG_ARCH\" != \"aarch64\" ]]; then
     echo 'ERROR: Imported image is not ARM64. Please import an ARM64 cEOS tarball.' >&2
     exit 1
   fi
-  if [[ \"\$HOST_ARCH\" != \"aarch64\" && \"\$HOST_ARCH\" != \"arm64\" ]]; then
-    echo 'WARNING: VM is not arm64/aarch64; ensure image arch matches host.'
-  fi
 "
 
 ### ───────────────────────────
-### print versions & where to go
+### fix clab labdir ACL (don’t write on mount)
+### ───────────────────────────
+multipass exec "$VM_NAME" -- bash -lc '
+  mkdir -p ~/.clab-runs
+  if ! grep -q CLAB_LABDIR_BASE ~/.bashrc; then
+    echo "export CLAB_LABDIR_BASE=\$HOME/.clab-runs" >> ~/.bashrc
+  fi
+'
+
+### ───────────────────────────
+### show versions & repo path
 ### ───────────────────────────
 multipass exec "$VM_NAME" -- bash -lc '
   echo ">>> Versions:"
@@ -134,21 +162,17 @@ multipass exec "$VM_NAME" -- bash -lc '
   ls -la ~/lab
 '
 
-# Fix permissions issue
-multipass exec "$VM_NAME" -- bash -lc '
-  mkdir -p ~/.clab-runs
-  if ! grep -q CLAB_LABDIR_BASE ~/.bashrc; then
-    echo "export CLAB_LABDIR_BASE=\$HOME/.clab-runs" >> ~/.bashrc
-  fi
-'
-
 ### ───────────────────────────
 ### optional: deploy the lab
 ### ───────────────────────────
 if [[ "$AUTO_DEPLOY" -eq 1 ]]; then
   echo ">>> Deploying lab from ~/lab/$LAB_FILE ..."
   multipass exec "$VM_NAME" -- bash -lc "
+    set -euo pipefail
     cd ~/lab
+    # ensure env var is seen by sudo
+    export CLAB_LABDIR_BASE=\$HOME/.clab-runs
+    sudo -E containerlab destroy -t '$LAB_FILE' || true
     sudo -E containerlab deploy -t '$LAB_FILE' --reconfigure
     echo
     echo '>>> Lab status:'
@@ -162,9 +186,50 @@ To deploy manually:
 
   multipass shell $VM_NAME
   cd ~/lab
-  sudo containerlab deploy -t $LAB_FILE --reconfigure
+  export CLAB_LABDIR_BASE=\$HOME/.clab-runs
+  sudo -E containerlab deploy -t $LAB_FILE --reconfigure
 
 EOF
 fi
 
-echo ">>> Done. SSH into the VM with: multipass shell $VM_NAME"
+echo ">>> Installing Go ${GO_VERSION} (linux/arm64) in the VM..."
+multipass exec "$VM_NAME" -- bash -lc '
+  set -euo pipefail
+  sudo apt-get update
+  # Useful build tools + git
+  sudo apt-get install -y git build-essential
+
+  # If the requested version is already present, skip reinstall
+  if [[ -x /usr/local/go/bin/go ]]; then
+    CUR=$(/usr/local/go/bin/go version | awk "{print \$3}" || true)
+  else
+    CUR=""
+  fi
+
+  if [[ "$CUR" != "go'"$GO_VERSION"'" ]]; then
+    echo "Downloading Go '"$GO_VERSION"'..."
+    curl -fsSL "https://go.dev/dl/'"$GO_TGZ"'" -o /tmp/'"$GO_TGZ"'
+    echo "Installing to /usr/local/go ..."
+    sudo rm -rf /usr/local/go
+    sudo tar -C /usr/local -xzf /tmp/'"$GO_TGZ"'
+    rm -f /tmp/'"$GO_TGZ"'
+  else
+    echo "Go '"$GO_VERSION"' already installed; skipping."
+  fi
+
+  # GOPATH for ubuntu user + PATH export for all shells
+  mkdir -p /home/ubuntu/go
+  sudo chown -R ubuntu:ubuntu /home/ubuntu/go
+
+  # Make Go available system-wide via profile.d
+  sudo bash -lc '\''cat >/etc/profile.d/go.sh <<EOF
+export GOROOT=/usr/local/go
+export GOPATH=/home/ubuntu/go
+export PATH=\$PATH:\$GOROOT/bin:\$GOPATH/bin
+EOF'\''
+
+  # Verify (use explicit path so current shell doesn’t need re-login)
+  /usr/local/go/bin/go version
+'
+
+echo ">>> Done. Enter the VM with: multipass shell $VM_NAME"

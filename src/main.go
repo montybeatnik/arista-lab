@@ -2,113 +2,215 @@ package main
 
 import (
 	"bytes"
-	"crypto/tls"
+	"context"
+	"embed"
 	"encoding/json"
-	"fmt"
-	"io"
+	"errors"
+	"html/template"
+	"io/fs"
 	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/montybeatnik/arista-lab/laber/pkgs/arista"
-	"github.com/montybeatnik/arista-lab/laber/pkgs/renderer"
 )
 
-type stringSlice []string
+// ======= Data models (same as before) =======
 
-func (s *stringSlice) String() string { return strings.Join(*s, ",") }
-func (s *stringSlice) Set(v string) error {
-	*s = append(*s, v)
-	return nil
+type InspectResult map[string][]ContainerInfo
+
+type ContainerInfo struct {
+	LabName     string `json:"lab_name"`
+	LabPath     string `json:"labPath"`
+	AbsLabPath  string `json:"absLabPath"`
+	Name        string `json:"name"`
+	ContainerID string `json:"container_id"`
+	Image       string `json:"image"`
+	Kind        string `json:"kind"`
+	State       string `json:"state"`
+	Status      string `json:"status"`
+	IPv4        string `json:"ipv4_address"`
+	IPv6        string `json:"ipv6_address"`
+	Owner       string `json:"owner"`
 }
 
-type eosClient struct {
-	url        string
-	httpClient *http.Client
+// ======= Config =======
+
+type serverCfg struct {
+	Listen  string
+	BaseDir string // lab files must live under here
 }
 
-func newEosClient(url string) eosClient {
-	// Configure a custom http.Transport with a modified TLS configuration
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+func (c serverCfg) sanitizeLabPath(p string) (string, error) {
+	if p == "" {
+		return "", errors.New("lab file required")
 	}
-
-	// Create a custom client with a timeout
-	cl := &http.Client{
-		Timeout:   10 * time.Second,
-		Transport: tr,
+	if !filepath.IsAbs(p) {
+		p = filepath.Join(c.BaseDir, p)
 	}
-	client := eosClient{url: url, httpClient: cl}
-	return client
+	abs, err := filepath.Abs(p)
+	if err != nil {
+		return "", err
+	}
+	baseAbs, _ := filepath.Abs(c.BaseDir)
+	if abs != baseAbs && !strings.HasPrefix(abs, baseAbs+string(os.PathSeparator)) {
+		return "", errors.New("lab file must be under basedir")
+	}
+	info, err := os.Stat(abs)
+	if err != nil || info.IsDir() {
+		return "", errors.New("lab file not found")
+	}
+	return abs, nil
 }
 
-func (c eosClient) run(reqBody []byte) {
-	// Create a new POST request with a body and custom headers
-	req, err := http.NewRequest(http.MethodPost, c.url, bytes.NewReader(reqBody))
-	if err != nil {
-		fmt.Println("Error creating request:", err)
-		return
-	}
+// ======= Handlers =======
 
-	username := "admin"
-	password := "admin"
-	// Set Basic Authentication headers.
-	req.SetBasicAuth(username, password)
-	req.Header.Set("Content-Type", "application/json")
+type pageData struct {
+	BaseDir string
+}
 
-	// Execute the request
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		fmt.Println("Error performing request:", err)
-		return
-	}
-	defer resp.Body.Close()
+//go:embed web/templates/*.tmpl
+var tplFS embed.FS
 
-	fmt.Println("Status:", resp.Status)
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error reading response body:", err)
-		return
-	}
+//go:embed web/static/*
+var staticFS embed.FS
 
-	// fmt.Println("Body:", string(body))
+// parse templates (explicit order to be clear)
+func makeTemplate() *template.Template {
+	return template.Must(template.ParseFS(
+		tplFS,
+		"web/templates/layout.tmpl",
+		"web/templates/index.tmpl",
+	))
+}
 
-	var bgpEvpnSummaryResp arista.BGPEvpnSummaryResponse
-	if err := json.Unmarshal(body, &bgpEvpnSummaryResp); err != nil {
-		panic(err)
-	}
-
-	for _, result := range bgpEvpnSummaryResp.Result {
-		for _, vrf := range result.Vrfs {
-			fmt.Println(vrf.ASN)
-			for k, v := range vrf.Peers {
-				fmt.Println(k)
-				fmt.Printf("prefix rcvd: %v\n", v.PrefixReceived)
-				fmt.Printf("prefix adv: %v\n", v.PrefixAdvertised)
-				// fmt.Printf("neighbor: %v\n")
-			}
+func indexHandler(cfg serverCfg, t *template.Template) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var buf bytes.Buffer
+		if err := t.ExecuteTemplate(&buf, "layout", pageData{BaseDir: cfg.BaseDir}); err != nil {
+			// nothing has been written to the client yet → safe to send an error
+			http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
+			return
 		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = buf.WriteTo(w)
 	}
+}
 
+type inspectReq struct {
+	Lab        string `json:"lab"`
+	UseSudo    bool   `json:"sudo"`
+	TimeoutSec int    `json:"timeoutSec"`
+}
+
+type inspectResp struct {
+	OK      bool            `json:"ok"`
+	Error   string          `json:"error,omitempty"`
+	LabKey  string          `json:"labKey,omitempty"`
+	Nodes   []ContainerInfo `json:"nodes,omitempty"`
+	RawJSON json.RawMessage `json:"rawJson,omitempty"`
+}
+
+func runInspect(ctx context.Context, labPath string, useSudo bool) ([]byte, error) {
+	args := []string{"containerlab", "inspect", "-t", labPath, "--format", "json"}
+	if useSudo {
+		args = append([]string{"sudo", "-n"}, args...)
+	}
+	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+	cmd.Stderr = os.Stderr
+	return cmd.Output()
+}
+
+func inspectHandler(cfg serverCfg) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Only allow POST; if you clicked and nothing happened before, it’s
+		// often script not loaded or method mismatch. We enforce POST here.
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var req inspectReq
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeJSON(w, http.StatusBadRequest, inspectResp{OK: false, Error: "bad JSON: " + err.Error()})
+			return
+		}
+
+		labAbs, err := cfg.sanitizeLabPath(req.Lab)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, inspectResp{OK: false, Error: err.Error()})
+			return
+		}
+
+		timeout := time.Duration(req.TimeoutSec) * time.Second
+		if timeout <= 0 || timeout > 60*time.Second {
+			timeout = 15 * time.Second
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), timeout)
+		defer cancel()
+
+		out, err := runInspect(ctx, labAbs, req.UseSudo)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, inspectResp{OK: false, Error: "inspect failed: " + err.Error()})
+			return
+		}
+
+		var parsed InspectResult
+		if err := json.Unmarshal(out, &parsed); err != nil {
+			writeJSON(w, http.StatusInternalServerError, inspectResp{OK: false, Error: "parse failed: " + err.Error()})
+			return
+		}
+
+		var key string
+		var nodes []ContainerInfo
+		for k, v := range parsed {
+			key, nodes = k, v
+			break
+		}
+
+		writeJSON(w, http.StatusOK, inspectResp{
+			OK:      true,
+			LabKey:  key,
+			Nodes:   nodes,
+			RawJSON: out,
+		})
+	}
+}
+
+func writeJSON(w http.ResponseWriter, code int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	_ = json.NewEncoder(w).Encode(v)
 }
 
 func main() {
-	cmds := []string{"show bgp evpn summary"}
-	url := "https://172.20.20.9/command-api"
-	client := newEosClient(url)
-	tmplPath := "src/templates/eapi_payload.tmpl"
-	fmt.Println("rendering template...")
-	body, err := renderer.RenderTemplate(tmplPath, arista.PayloadData{
-		Method:  "runCmds",
-		Version: 1,
-		Format:  "json",
-		Cmds:    cmds,
-	})
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
-		os.Exit(1)
+	cfg := serverCfg{
+		Listen:  ":8080",
+		BaseDir: "/home/ubuntu/lab",
 	}
-	fmt.Println("running cmd...")
-	client.run(body)
+
+	// Templates
+	t := makeTemplate()
+
+	// Static files (embed FS subdir)
+	static, _ := fs.Sub(staticFS, "web/static")
+	mux := http.NewServeMux()
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(static))))
+
+	// Pages & API
+	mux.HandleFunc("/", indexHandler(cfg, t))
+	mux.HandleFunc("/inspect", inspectHandler(cfg))
+
+	srv := &http.Server{
+		Addr:              cfg.Listen,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	println("listening on", cfg.Listen, "basedir:", cfg.BaseDir)
+	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		panic(err)
+	}
 }

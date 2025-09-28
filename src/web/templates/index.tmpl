@@ -1,0 +1,36 @@
+{{ define "title" }}Containerlab Inspect{{ end }}
+
+{{ define "content" }}
+<h1>Containerlab Inspect</h1>
+<p class="muted">Base directory: <code id="baseDir">{{ .BaseDir }}</code></p>
+
+<form id="f">
+  <fieldset>
+    <legend>Inputs</legend>
+    <label>
+      Lab file
+      <input id="lab" type="text" value="lab.clab.yml" required>
+    </label>
+    <label>
+      Timeout (seconds)
+      <input id="timeout" type="number" min="1" max="60" value="15">
+    </label>
+    <label class="checkbox">
+      <input id="sudo" type="checkbox" checked> Use sudo (non-interactive)
+    </label>
+  </fieldset>
+  <div>
+    <button id="runBtn" type="submit">Inspect</button>
+    <span id="spinner" class="spinner" hidden>Running…</span>
+  </div>
+</form>
+
+<section id="result" hidden>
+  <h2>Nodes (<span id="labKey"></span>)</h2>
+  <table id="nodesTbl">
+    <thead><tr><th>Name</th><th>Kind</th><th>Image</th><th>State</th><th>IPv4</th><th>Owner</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <details><summary>Raw JSON</summary><pre id="rawJson"></pre></details>
+</section>
+{{ end }}
