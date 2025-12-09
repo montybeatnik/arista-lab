@@ -42,27 +42,11 @@ sudo apt-get install -y ca-certificates curl gnupg lsb-release jq git iproute2 a
 ### Docker + Containerlab
 ### (official quick-setup paths for fast provisioning)
 ### ───────────────────────────
-#### This approach didn't work, trying the one below. 
-# if ! command -v docker >/dev/null 2>&1; then
-#   say "Installing Docker via convenience script..."
-#   curl -fsSL https://get.docker.com | sh   # quick provisioning path
-#   sudo usermod -aG docker "$USER" || true
-# fi
-
-sudo apt-get install -y ca-certificates curl
-sudo install -m 0755 -d /etc/apt/keyrings
-sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
-  -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
-source /etc/os-release
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
-https://download.docker.com/linux/ubuntu $VERSION_CODENAME stable" | \
-sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
-sudo apt-get update
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-sudo usermod -aG docker "$USER"
-newgrp docker <<<''
-docker --version
+if ! command -v docker >/dev/null 2>&1; then
+  say "Installing Docker via convenience script..."
+  curl -fsSL https://get.docker.com | sh   # quick provisioning path
+  sudo usermod -aG docker "$USER" || true
+fi
 
 if ! command -v containerlab >/dev/null 2>&1; then
   say "Installing Containerlab..."
