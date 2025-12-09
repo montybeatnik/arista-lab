@@ -37,6 +37,21 @@
   - Boot into the next disk. 
   
 
+Once the VM is up. 
+1. disconnect from the VPN. 
+2. SSH the EOS image on to the VM
+   1. ```bash
+   (ncpcli) christopherhern@Christophers-MacBook-Pro arista-lab % scp ~/Downloads/cEOSarm-lab-4.34.2.1F.tar.xz chern@10.0.0.145:/home/chern
+   The authenticity of host '10.0.0.145 (10.0.0.145)' can't be established.
+   ED25519 key fingerprint is SHA256:YvP5q2ZSmcBvS925+kRl+6K9LH4mpd22dzJvfzuxH34.
+   This key is not known by any other names.
+   Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+   Warning: Permanently added '10.0.0.145' (ED25519) to the list of known hosts.
+   chern@10.0.0.145's password:
+   cEOSarm-lab-4.34.2.1F.tar.xz                                                                                                                                                                                 100%  550MB  67.9MB/s   00:08
+   ```
+3. Make it available to docker. 
+
 
 ```bash
 ╭──────────────────────────────┬─────────────────────┬─────────┬───────────────────╮

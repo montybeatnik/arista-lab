@@ -2,6 +2,37 @@
 set -Eeuo pipefail
 trap 'echo "ERROR on line $LINENO. Exiting." >&2' ERR
 
+### helper funcs
+install_ceos_image() {
+  echo ">>> Installing cEOS-lab image into Docker…"
+  [[ -f "$CEOS_TARBALL" ]] || { echo "ERROR: cEOS tarball not found at $CEOS_TARBALL"; exit 1; }
+
+  if docker image inspect "$CEOS_TAG" >/dev/null 2>&1; then
+    echo " - Docker image '$CEOS_TAG' already present; skipping import."
+    return 0
+  fi
+
+  # Choose the right loader: Arista ships cEOS as a tarball for `docker import`
+  case "$CEOS_TARBALL" in
+    *.tar|*.tar.gz|*.tgz|*.tar.xz)
+      echo " - Importing $(basename "$CEOS_TARBALL") as $CEOS_TAG"
+      docker import "$CEOS_TARBALL" "$CEOS_TAG"
+      ;;
+    *.docker|*.tar?.lz4)
+      # If you ever saved it with `docker save`, use `docker load` instead.
+      echo " - Loading docker-archive $CEOS_TARBALL"
+      docker load -i "$CEOS_TARBALL"
+      ;;
+    *)
+      echo "ERROR: Unknown cEOS archive type: $CEOS_TARBALL"
+      exit 1
+      ;;
+  esac
+
+  echo " - Verifying image:"
+  docker image inspect "$CEOS_TAG" --format '  RepoTags: {{.RepoTags}} | Arch: {{.Architecture}}'
+}
+
 ### ───────────────────────────
 ### EDIT THESE FOR YOUR SETUP
 ### ───────────────────────────
@@ -58,6 +89,11 @@ fi
 if ! groups | grep -q '\bdocker\b'; then
   say "You were added to 'docker' group. Re-login or run: newgrp docker"
 fi
+
+### Install cEOS into docker
+# point CEOS_TARBALL at the actual file then install
+CEOS_TARBALL="${CEOS_TARBALL:-$HOME/images/cEOS-lab-4.34.2.1F.tar.xz}"
+install_ceos_image
 
 ### ───────────────────────────
 ### Repo: try VirtualBox shared folder first, else git clone
