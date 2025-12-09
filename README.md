@@ -40,7 +40,8 @@
 Once the VM is up. 
 1. disconnect from the VPN. 
 2. SSH the EOS image on to the VM
-   1. ```bash
+   1. Example:
+   ```bash
    (ncpcli) christopherhern@Christophers-MacBook-Pro arista-lab % scp ~/Downloads/cEOSarm-lab-4.34.2.1F.tar.xz chern@10.0.0.145:/home/chern
    The authenticity of host '10.0.0.145 (10.0.0.145)' can't be established.
    ED25519 key fingerprint is SHA256:YvP5q2ZSmcBvS925+kRl+6K9LH4mpd22dzJvfzuxH34.
@@ -50,7 +51,11 @@ Once the VM is up.
    chern@10.0.0.145's password:
    cEOSarm-lab-4.34.2.1F.tar.xz                                                                                                                                                                                 100%  550MB  67.9MB/s   00:08
    ```
-3. Make it available to docker. 
+
+```bash
+chern@clab-test:~/src/github.com/montybeatnik/arista-lab$ chmod +x setup-clab-on-vritualbox.sh
+chern@clab-test:~/src/github.com/montybeatnik/arista-lab$ ./setup-clab-on-vritualbox.sh
+```
 
 
 ```bash

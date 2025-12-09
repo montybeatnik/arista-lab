@@ -92,7 +92,7 @@ fi
 
 ### Install cEOS into docker
 # point CEOS_TARBALL at the actual file then install
-CEOS_TARBALL="${CEOS_TARBALL:-$HOME/images/cEOS-lab-4.34.2.1F.tar.xz}"
+CEOS_TARBALL="${CEOS_TARBALL:-$HOME/images/cEOSarm-lab-4.34.2.1F.tar.xz}"
 install_ceos_image
 
 ### ───────────────────────────
