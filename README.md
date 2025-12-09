@@ -13,8 +13,8 @@
    1. Open VirtualBox and click on "New".
    2. Name your VM (e.g., "clab-test").
    3. Set the Type to "Linux", subtype to "Ubuntu" and Version to "Ubuntu (64-bit)".
-   4. Allocate memory (RAM) to the VM (minimum 8 GB recommended).
-   5. Allocate cores (CPUs) to the VM (minimum 4)
+   4. Allocate memory (RAM) to the VM (16 GB recommended).
+   5. Allocate cores (CPUs) to the VM (16 recommended).
    6. Create a virtual hard disk (VDI format, dynamically allocated, at least 25 GB).
 5. Attach the Ubuntu Server ISO:
    1. Select your newly created VM and click on "Settings".
