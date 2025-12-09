@@ -1,9 +1,44 @@
 # Arista CLAB Lab
 
-## Setup Steps
-1. Download ubuntu image 
-2. Create new VM with image in VirtualBox 
+## Downloads
+- oracle VirtualBox
+- linux [image](https://cdimage.ubuntu.com/releases/24.04/release/ubuntu-24.04.3-live-server-arm64.iso)
+- Container EOS image: [cEOSarm-lab-4.34.2.1F.tar.xz]() #TODO: add link
 
+## Setup Steps
+1. Download Oracle VirtualBox.
+2. Download ubuntu image.
+3. Download container EOS image. 
+4. Create new VM with image in VirtualBox 
+   1. Open VirtualBox and click on "New".
+   2. Name your VM (e.g., "clab-test").
+   3. Set the Type to "Linux", subtype to "Ubuntu" and Version to "Ubuntu (64-bit)".
+   4. Allocate memory (RAM) to the VM (minimum 8 GB recommended).
+   5. Allocate cores (CPUs) to the VM (minimum 4)
+   6. Create a virtual hard disk (VDI format, dynamically allocated, at least 25 GB).
+5. Attach the Ubuntu Server ISO:
+   1. Select your newly created VM and click on "Settings".
+   2. Navigate to "Storage".
+   3. Under "Controller: IDE", click on the empty disk icon.
+   4. Click on the disk icon next to "Optical Drive" and choose "Choose a disk file...".
+   5. Select the Ubuntu Server ISO you downloaded earlier.
+6. Walk through the setup of your machine prompt by prompt. 
+
+### Walkthfough with images
+- ![create-new-vm-1](./docs/images/create-vm-1.png)
+- ![create-new-vm-2](./docs/images/create-vm-2-memory.png)
+- ![create-new-vm-3](./docs/images/create-vm-3-hd.png)
+- ![create-new-vm-4](./docs/images/create-vm-4-iso.png)
+- ![remove-media](./docs/images/remmove-media.png)
+- ![power-off](./docs/images/power-off.png)
+- ![remove-drive](./docs/images/remove-drive.png)
+  - click the disk with the red X. 
+  - Rick click on the VM and go to start. 
+  - Boot into the next disk. 
+  
+
+
+```bash
 ╭──────────────────────────────┬─────────────────────┬─────────┬───────────────────╮
 │             Name             │      Kind/Image     │  State  │   IPv4/6 Address  │
 ├──────────────────────────────┼─────────────────────┼─────────┼───────────────────┤
@@ -37,6 +72,7 @@
 │ clab-evpn-rdma-fabric-spine2 │ ceos                │ running │ 172.20.20.6       │
 │                              │ ceosimage:4.34.2.1f │         │ 3fff:172:20:20::6 │
 ╰──────────────────────────────┴─────────────────────┴─────────┴───────────────────╯
+```
 
 ```bash
 # 1) watch tx packet counter
