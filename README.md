@@ -39,20 +39,27 @@
 
 Once the VM is up. 
 1. disconnect from the VPN. 
-2. SSH the EOS image on to the VM
+2. push your ssh key to the machine
+   1. 
+   ```bash
+    ssh-copy-id -i <path-to-pub-key-file>.pub <username>@<vm-IP>
+   ```
+3. SSH the EOS image on to the VM
    1. Example:
    ```bash
-   (ncpcli) christopherhern@Christophers-MacBook-Pro arista-lab % scp ~/Downloads/cEOSarm-lab-4.34.2.1F.tar.xz chern@10.x.x.x:/home/chern
+   (ncpcli) christopherhern@Christophers-MacBook-Pro arista-lab % scp ~/Downloads/cEOSarm-lab-4.34.2.1F.tar.xz <username>@<vm-IP>:<homedir>
    This key is not known by any other names.
       cEOSarm-lab-4.34.2.1F.tar.xz                                                                                                                                                                                 100%  550MB  67.9MB/s   00:08
    ```
+4. Run the setup script. 
+   1. 
+   ```bash
+   chern@clab-test:~/src/github.com/montybeatnik/arista-lab$ chmod +x setup-clab-on-vritualbox.sh
+   chern@clab-test:~/src/github.com/montybeatnik/arista-lab$ ./setup-clab-on-vritualbox.sh
+   ```
 
-```bash
-chern@clab-test:~/src/github.com/montybeatnik/arista-lab$ chmod +x setup-clab-on-vritualbox.sh
-chern@clab-test:~/src/github.com/montybeatnik/arista-lab$ ./setup-clab-on-vritualbox.sh
-```
 
-
+You should see something simliar to the following:
 ```bash
 ╭──────────────────────────────┬─────────────────────┬─────────┬───────────────────╮
 │             Name             │      Kind/Image     │  State  │   IPv4/6 Address  │
