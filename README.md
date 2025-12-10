@@ -19,20 +19,28 @@ There is some manual setup if you're using VirtualBox. If you're using multipass
 1. Download Oracle VirtualBox.
 2. Download ubuntu image.
 3. Download container EOS image. 
-4. Create new VM with image in VirtualBox 
+### The Easy Way
+1. Run the VM setup script. 
+    ```bash
+    chmod +x vmsetup.sh
+    ./vmsetup.sh
+    ```
+
+### The Harder Way
+1. Create new VM with image in VirtualBox 
    1. Open VirtualBox and click on "New".
    2. Name your VM (e.g., "clab-test").
    3. Set the Type to "Linux", subtype to "Ubuntu" and Version to "Ubuntu (64-bit)".
    4. Allocate memory (RAM) to the VM (16 GB recommended).
    5. Allocate cores (CPUs) to the VM (16 recommended).
    6. Create a virtual hard disk (VDI format, dynamically allocated, at least 25 GB).
-5. Attach the Ubuntu Server ISO:
+2. Attach the Ubuntu Server ISO:
    1. Select your newly created VM and click on "Settings".
    2. Navigate to "Storage".
    3. Under "Controller: IDE", click on the empty disk icon.
    4. Click on the disk icon next to "Optical Drive" and choose "Choose a disk file...".
    5. Select the Ubuntu Server ISO you downloaded earlier.
-6. Walk through the setup of your machine prompt by prompt. 
+3. Walk through the setup of your machine prompt by prompt. 
 
 ### Walkthfough with images
 - ![create-new-vm-1](./docs/images/create-vm-1.png)
@@ -193,3 +201,4 @@ sudo -E containerlab deploy  -t ~/lab/lab.clab.yml --reconfigure
   - [ ] Baisc RSVP/MPLS with an IGP
   - [ ] Segment Routing with MPLS
   - [ ] Segment Routing with IPv6
+  
