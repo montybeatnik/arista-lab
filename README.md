@@ -1,4 +1,14 @@
 # Arista CLAB Lab
+If you want to experiment with a protocol or technology in the networking space, this lab setup can help quickly build the scaffolding. 
+
+It leverages containerlag, which uses docker under the hood to spin up nodes. You define the nodes and edges with a manifest file declared in YAML. 
+
+- [containlab](https://containerlab.dev)
+
+There is some manual setup if you're using VirtualBox. If you're using multipass, it becomes much easier. 
+
+## What we're building
+![topo](docs/images/topo.png)
 
 ## Downloads
 - oracle VirtualBox
@@ -174,3 +184,12 @@ export CLAB_LABDIR_BASE="$HOME/.clab-runs"   # where Containerlab will write the
 sudo -E containerlab destroy -t ~/lab/lab.clab.yml || true
 sudo -E containerlab deploy  -t ~/lab/lab.clab.yml --reconfigure
 ```
+
+## TODO:
+- [ ] add multiple topologies
+  - [ ] base IP setup between devices
+  - [ ] ISIS as IGP 
+  - [ ] OSPF as IGP 
+  - [ ] Baisc RSVP/MPLS with an IGP
+  - [ ] Segment Routing with MPLS
+  - [ ] Segment Routing with IPv6
