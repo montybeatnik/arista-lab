@@ -16,7 +16,7 @@ install_ceos_image() {
   case "$CEOS_TARBALL" in
     *.tar|*.tar.gz|*.tgz|*.tar.xz)
       echo " - Importing $(basename "$CEOS_TARBALL") as $CEOS_TAG"
-      sudo er import "$CEOS_TARBALL" "$CEOS_TAG"
+      sudo docker import "$CEOS_TARBALL" "$CEOS_TAG"
       ;;
     *.docker|*.tar?.lz4)
       # If you ever saved it with `docker save`, use `docker load` instead.
