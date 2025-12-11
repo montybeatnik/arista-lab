@@ -6,27 +6,33 @@ topology:
       kind: ceos
       image: ceosimage:4.34.2.1f
       startup-config: configs/spine1.cfg
+      enforce-startup-config: true
     spine2:
       kind: ceos
       image: ceosimage:4.34.2.1f
       startup-config: configs/spine2.cfg
+      enforce-startup-config: true
 
     leaf1:
       kind: ceos
       image: ceosimage:4.34.2.1f
       startup-config: configs/leaf1.cfg
+      enforce-startup-config: true
     leaf2:
       kind: ceos
       image: ceosimage:4.34.2.1f
       startup-config: configs/leaf2.cfg
+      enforce-startup-config: true
     leaf3:
       kind: ceos
       image: ceosimage:4.34.2.1f
       startup-config: configs/leaf3.cfg
+      enforce-startup-config: true
     leaf4:
       kind: ceos
       image: ceosimage:4.34.2.1f
       startup-config: configs/leaf4.cfg
+      enforce-startup-config: true
 
     # Linux "GPU" hosts for quick EVPN L2 tests
     gpu1:
