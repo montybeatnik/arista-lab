@@ -7,7 +7,7 @@ install_ceos_image() {
   echo ">>> Installing cEOS-lab image into Docker…"
   [[ -f "$CEOS_TARBALL" ]] || { echo "ERROR: cEOS tarball not found at $CEOS_TARBALL"; exit 1; }
 
-  if docker image inspect "$CEOS_TAG" >/dev/null 2>&1; then
+  if sudo docker image inspect "$CEOS_TAG" >/dev/null 2>&1; then
     echo " - Docker image '$CEOS_TAG' already present; skipping import."
     return 0
   fi
@@ -16,12 +16,12 @@ install_ceos_image() {
   case "$CEOS_TARBALL" in
     *.tar|*.tar.gz|*.tgz|*.tar.xz)
       echo " - Importing $(basename "$CEOS_TARBALL") as $CEOS_TAG"
-      docker import "$CEOS_TARBALL" "$CEOS_TAG"
+      sudo er import "$CEOS_TARBALL" "$CEOS_TAG"
       ;;
     *.docker|*.tar?.lz4)
       # If you ever saved it with `docker save`, use `docker load` instead.
       echo " - Loading docker-archive $CEOS_TARBALL"
-      docker load -i "$CEOS_TARBALL"
+      sudo docker load -i "$CEOS_TARBALL"
       ;;
     *)
       echo "ERROR: Unknown cEOS archive type: $CEOS_TARBALL"
@@ -30,7 +30,7 @@ install_ceos_image() {
   esac
 
   echo " - Verifying image:"
-  docker image inspect "$CEOS_TAG" --format '  RepoTags: {{.RepoTags}} | Arch: {{.Architecture}}'
+  sudo docker image inspect "$CEOS_TAG" --format '  RepoTags: {{.RepoTags}} | Arch: {{.Architecture}}'
 }
 
 ### ───────────────────────────
@@ -128,7 +128,7 @@ fi
 ### ───────────────────────────
 if [ -n "$CEOS_TARBALL" ]; then
   say "Importing cEOS image from '$CEOS_TARBALL' as '$CEOS_TAG'..."
-  if ! docker image inspect "$CEOS_TAG" >/dev/null 2>&1; then
+  if ! sudo docker image inspect "$CEOS_TAG" >/dev/null 2>&1; then
     sudo docker import "$CEOS_TARBALL" "$CEOS_TAG"
   else
     say "Docker image '$CEOS_TAG' already present; skipping import."
