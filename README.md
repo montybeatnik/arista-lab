@@ -13,7 +13,7 @@ There is some manual setup if you're using VirtualBox. If you're using multipass
 ## Downloads
 - oracle VirtualBox
 - linux [image](https://cdimage.ubuntu.com/releases/24.04/release/ubuntu-24.04.3-live-server-arm64.iso)
-- Container EOS image: [cEOSarm-lab-4.34.2.1F.tar.xz]() #TODO: add link
+- Container EOS image: [cEOSarm-lab-4.34.2.1F.tar.xz](https://www.arista.com/en/support/software-download)
 
 ## Setup Steps
 1. Download Oracle VirtualBox.
