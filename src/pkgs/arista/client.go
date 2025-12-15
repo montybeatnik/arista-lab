@@ -30,12 +30,12 @@ func NewEosClient(url string) eosClient {
 	return client
 }
 
-func (c eosClient) Run(reqBody []byte) {
+func (c eosClient) Run(reqBody []byte) error {
 	// Create a new POST request with a body and custom headers
 	req, err := http.NewRequest(http.MethodPost, c.url, bytes.NewReader(reqBody))
 	if err != nil {
 		fmt.Println("Error creating request:", err)
-		return
+		return error.New("Error creating request:", err)
 	}
 
 	username := "admin"
@@ -48,7 +48,7 @@ func (c eosClient) Run(reqBody []byte) {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		fmt.Println("Error performing request:", err)
-		return
+		return error.New("Error performing request:", err)
 	}
 	defer resp.Body.Close()
 
@@ -56,14 +56,14 @@ func (c eosClient) Run(reqBody []byte) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading response body:", err)
-		return
+		return error.New("Error reading response body:", err)
 	}
 
 	// fmt.Println("Body:", string(body))
 
 	var bgpEvpnSummaryResp BGPEvpnSummaryResponse
 	if err := json.Unmarshal(body, &bgpEvpnSummaryResp); err != nil {
-		panic(err)
+		return error.New("Error unmarshalling resp body:", err)
 	}
 
 	for _, result := range bgpEvpnSummaryResp.Result {
@@ -77,5 +77,6 @@ func (c eosClient) Run(reqBody []byte) {
 			}
 		}
 	}
+	return nil
 
 }
