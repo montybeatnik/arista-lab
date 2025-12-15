@@ -30,6 +30,13 @@ func NewEosClient(url string) eosClient {
 	return client
 }
 
+func (c eosClient) getCreds() (string, string) {
+	// TODO: this should be a call to a vault
+	username := "admin"
+	password := "admin"
+	return username, password
+}
+
 func (c eosClient) Run(reqBody []byte) error {
 	// Create a new POST request with a body and custom headers
 	req, err := http.NewRequest(http.MethodPost, c.url, bytes.NewReader(reqBody))
@@ -38,8 +45,7 @@ func (c eosClient) Run(reqBody []byte) error {
 		return fmt.Errorf("Error creating request:", err)
 	}
 
-	username := "admin"
-	password := "admin"
+	username, password := c.getCreds()
 	// Set Basic Authentication headers.
 	req.SetBasicAuth(username, password)
 	req.Header.Set("Content-Type", "application/json")
