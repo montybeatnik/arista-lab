@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"time"
-	"errors"
 )
 
 type eosClient struct {
