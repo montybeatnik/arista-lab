@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"time"
+	"errors"
 )
 
 type eosClient struct {
@@ -35,7 +36,7 @@ func (c eosClient) Run(reqBody []byte) error {
 	req, err := http.NewRequest(http.MethodPost, c.url, bytes.NewReader(reqBody))
 	if err != nil {
 		fmt.Println("Error creating request:", err)
-		return error.New("Error creating request:", err)
+		return errors.New("Error creating request:", err)
 	}
 
 	username := "admin"
@@ -48,7 +49,7 @@ func (c eosClient) Run(reqBody []byte) error {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		fmt.Println("Error performing request:", err)
-		return error.New("Error performing request:", err)
+		return errors.New("Error performing request:", err)
 	}
 	defer resp.Body.Close()
 
@@ -56,14 +57,14 @@ func (c eosClient) Run(reqBody []byte) error {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading response body:", err)
-		return error.New("Error reading response body:", err)
+		return errors.New("Error reading response body:", err)
 	}
 
 	// fmt.Println("Body:", string(body))
 
 	var bgpEvpnSummaryResp BGPEvpnSummaryResponse
 	if err := json.Unmarshal(body, &bgpEvpnSummaryResp); err != nil {
-		return error.New("Error unmarshalling resp body:", err)
+		return errors.New("Error unmarshalling resp body:", err)
 	}
 
 	for _, result := range bgpEvpnSummaryResp.Result {
