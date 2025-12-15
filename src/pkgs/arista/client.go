@@ -37,7 +37,7 @@ func (c eosClient) getCreds() (string, string) {
 	return username, password
 }
 
-func (c eosClient) Run(reqBody []byte) error {
+func (c eosClient) Run(reqBody []byte, cmdResp any) error {
 	// Create a new POST request with a body and custom headers
 	req, err := http.NewRequest(http.MethodPost, c.url, bytes.NewReader(reqBody))
 	if err != nil {
@@ -67,12 +67,11 @@ func (c eosClient) Run(reqBody []byte) error {
 
 	// fmt.Println("Body:", string(body))
 
-	var bgpEvpnSummaryResp BGPEvpnSummaryResponse
-	if err := json.Unmarshal(body, &bgpEvpnSummaryResp); err != nil {
+	if err := json.Unmarshal(body, &cmdResp); err != nil {
 		return fmt.Errorf("Error unmarshalling resp body:", err)
 	}
 
-	for _, result := range bgpEvpnSummaryResp.Result {
+	for _, result := range cmdResp.Result {
 		for _, vrf := range result.Vrfs {
 			fmt.Println(vrf.ASN)
 			for k, v := range vrf.Peers {
