@@ -11,7 +11,7 @@ curl -sk -u "$USER:$PASS" \
         "params": {
           "version": 1,
           "format": "json",
-          "cmds": ["show ip interface brief"]
+          "cmds": ["show version"]
         },
         "id": 1
       }' | jq
