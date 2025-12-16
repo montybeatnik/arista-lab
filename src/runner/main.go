@@ -24,8 +24,8 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Println("running cmd...")
-	var bgpEvpnSummaryResp BGPEvpnSummaryResponse
-	if err := client.Run(body, bgpEvpnSummaryResp); err != nil {
+	var bgpEvpnSummaryResp arista.BGPEvpnSummaryResponse
+	if err := client.Run(body, &bgpEvpnSummaryResp); err != nil {
 		fmt.Printf("Run failed: %v\n", err)
 	}
 	fmt.Println(bgpEvpnSummaryResp)
