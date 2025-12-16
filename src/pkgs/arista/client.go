@@ -38,12 +38,12 @@ func (c eosClient) getCreds() (string, string) {
 }
 
 // Run executes the request body against the client target device. 
-func (c eosClient) Run(reqBody []byte, cmdResp any) error {
+func (c eosClient) Run(reqBody []byte, cmdResp any) (any, error) {
 	// Create a new POST request with a body and custom headers
 	req, err := http.NewRequest(http.MethodPost, c.url, bytes.NewReader(reqBody))
 	if err != nil {
 		fmt.Println("Error creating request:", err)
-		return fmt.Errorf("Error creating request:", err)
+		return nil, fmt.Errorf("Error creating request:", err)
 	}
 
 	username, password := c.getCreds()
@@ -55,7 +55,7 @@ func (c eosClient) Run(reqBody []byte, cmdResp any) error {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		fmt.Println("Error performing request:", err)
-		return fmt.Errorf("Error performing request:", err)
+		return nil, fmt.Errorf("Error performing request:", err)
 	}
 	defer resp.Body.Close()
 
@@ -63,26 +63,15 @@ func (c eosClient) Run(reqBody []byte, cmdResp any) error {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading response body:", err)
-		return fmt.Errorf("Error reading response body:", err)
+		return nil, fmt.Errorf("Error reading response body:", err)
 	}
 
 	// fmt.Println("Body:", string(body))
 
 	if err := json.Unmarshal(body, &cmdResp); err != nil {
-		return fmt.Errorf("Error unmarshalling resp body:", err)
+		return  nil, fmt.Errorf("Error unmarshalling resp body:", err)
 	}
 
-	for _, result := range cmdResp.Result {
-		for _, vrf := range result.Vrfs {
-			fmt.Println(vrf.ASN)
-			for k, v := range vrf.Peers {
-				fmt.Println(k)
-				fmt.Printf("prefix rcvd: %v\n", v.PrefixReceived)
-				fmt.Printf("prefix adv: %v\n", v.PrefixAdvertised)
-				// fmt.Printf("neighbor: %v\n")
-			}
-		}
-	}
-	return nil
+	return cmdResp, nil
 
 }

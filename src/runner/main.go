@@ -28,4 +28,5 @@ func main() {
 	if err := client.Run(body, bgpEvpnSummaryResp); err != nil {
 		fmt.Printf("Run failed: %v\n", err)
 	}
+	fmt.Println(bgpEvpnSummaryResp)
 }
