@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"github.com/montybeatnik/arista-lab/laber/pkgs/arista"
-	"github.com/montybeatnik/arista-lab/laber/pkgs/renderer"
 )
 
 func main() {

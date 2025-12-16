@@ -1,10 +1,15 @@
 package arista
 
+import (
+	"fmt"
+	"github.com/montybeatnik/arista-lab/laber/pkgs/renderer"
+)
+
 func (c eosClient) BGPSummary() (BGPEvpnSummaryResponse, error) {
 	cmds := []string{"show bgp summary"}
 	tmplPath := "templates/eapi_payload.tmpl"
 	fmt.Println("rendering template...")
-	body, err := renderer.RenderTemplate(tmplPath, arista.PayloadData{
+	body, err := renderer.RenderTemplate(tmplPath, PayloadData{
 		Method:  "runCmds",
 		Version: 1,
 		Format:  "json",
@@ -15,8 +20,8 @@ func (c eosClient) BGPSummary() (BGPEvpnSummaryResponse, error) {
 		return bgpEvpnSummaryResp{}, fmt.Errorf("failed to render template: %v", err)
 	}
 	fmt.Println("running cmd...")
-	var bgpEvpnSummaryResp arista.BGPEvpnSummaryResponse
-	if err := client.Run(body, &bgpEvpnSummaryResp); err != nil {
+	var bgpEvpnSummaryResp BGPEvpnSummaryResponse
+	if err := c.Run(body, &bgpEvpnSummaryResp); err != nil {
 		fmt.Printf("Run failed: %v\n", err)
 		return bgpEvpnSummaryResp{}, fmt.Errorf("run failed: %v", err)
 	}
