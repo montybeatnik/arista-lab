@@ -10,11 +10,13 @@ import (
 	"time"
 )
 
+// eosClient logically represents an EOS client.
 type eosClient struct {
 	url        string
 	httpClient *http.Client
 }
 
+// NewEosClient is a factory function to stand up an EOS client.
 func NewEosClient(url string) eosClient {
 	// Configure a custom http.Transport with a modified TLS configuration
 	tr := &http.Transport{
@@ -30,6 +32,7 @@ func NewEosClient(url string) eosClient {
 	return client
 }
 
+// getCreds is a helper function to retrieve device credentials. 
 func (c eosClient) getCreds() (string, string) {
 	// TODO: this should be a call to a vault
 	username := "admin"
@@ -59,19 +62,15 @@ func (c eosClient) Run(reqBody []byte, cmdResp any) error {
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("Status:", resp.Status)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading response body:", err)
 		return fmt.Errorf("Error reading response body:", err)
 	}
 
-	// fmt.Println("Body:", string(body))
-
 	if err := json.Unmarshal(body, &cmdResp); err != nil {
 		return fmt.Errorf("Error unmarshalling resp body:", err)
 	}
 
 	return nil
-
 }

@@ -11,21 +11,8 @@ func main() {
 	cmds := []string{"show bgp summary"}
 	url := "https://172.20.20.9/command-api"
 	client := arista.NewEosClient(url)
-	tmplPath := "templates/eapi_payload.tmpl"
-	fmt.Println("rendering template...")
-	body, err := renderer.RenderTemplate(tmplPath, arista.PayloadData{
-		Method:  "runCmds",
-		Version: 1,
-		Format:  "json",
-		Cmds:    cmds,
-	})
+	bgpEvpnSummaryResp, err := client.BGPSummary()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
-		os.Exit(1)
-	}
-	fmt.Println("running cmd...")
-	var bgpEvpnSummaryResp arista.BGPEvpnSummaryResponse
-	if err := client.Run(body, &bgpEvpnSummaryResp); err != nil {
 		fmt.Printf("Run failed: %v\n", err)
 	}
 	fmt.Println(bgpEvpnSummaryResp)
