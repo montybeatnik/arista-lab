@@ -28,7 +28,7 @@ func (c eosClient) BGPSummary() (BGPEvpnSummaryResponse, error) {
 	return bgpEvpnSummaryResp, nil
 }
 
-func (c eosClient) Version() error {
+func (c eosClient) Version() (VersionResp, error) {
 	cmds := []string{"show version"}
 	tmplPath := "templates/eapi_payload.tmpl"
 	fmt.Println("rendering template...")
