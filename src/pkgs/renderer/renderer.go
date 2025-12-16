@@ -7,10 +7,19 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/montybeatnik/arista-lab/laber/pkgs/arista"
+	// "github.com/montybeatnik/arista-lab/laber/pkgs/arista"
 )
 
-func RenderTemplate(tplPath string, data arista.PayloadData) ([]byte, error) {
+// PayloadData represents (Aritsa) payload
+type PayloadData struct {
+	Method  string
+	Version int
+	Format  string
+	Cmds    []string
+	ID      int
+}
+
+func RenderTemplate(tplPath string, data PayloadData) ([]byte, error) {
 	funcs := template.FuncMap{
 		"toJSON": func(v any) (string, error) {
 			b, err := json.Marshal(v)
