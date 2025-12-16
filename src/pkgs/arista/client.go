@@ -37,6 +37,7 @@ func (c eosClient) getCreds() (string, string) {
 	return username, password
 }
 
+// Run executes the request body against the client target device. 
 func (c eosClient) Run(reqBody []byte, cmdResp any) error {
 	// Create a new POST request with a body and custom headers
 	req, err := http.NewRequest(http.MethodPost, c.url, bytes.NewReader(reqBody))
