@@ -13,7 +13,7 @@ func main() {
 		fmt.Printf("Run failed: %v\n", err)
 	}
 	fmt.Println(bgpEvpnSummaryResp)
-	ver, err := client.VersionResp()
+	ver, err := client.Version()
 	if err != nil {
 		fmt.Printf("Run failed: %v\n", err)
 	}
