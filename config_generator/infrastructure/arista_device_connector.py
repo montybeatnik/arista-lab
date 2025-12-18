@@ -70,6 +70,6 @@ class AristaDeviceConnector:
 
         if response.status_code == 200:
             print(f"Configuration applied successfully to {device.ip_address}")
-            print(f"{response=}")
+            print(f"##### DEBUG #####{response.content=}")
         else:
             print(f"Failed to apply configuration to {device.ip_address}: {response.text}")
