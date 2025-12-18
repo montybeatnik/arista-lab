@@ -41,7 +41,7 @@ def get_device_info(net_connect):
         loopback_ip = None
         for line in output.splitlines():
             if "Internet address" in line:
-                loopback_ip = line.split(":")[1].strip().split("/")[0]
+                loopback_ip = line.split("is ")[1].strip().split("/")[0]
                 break
         return hostname, loopback_ip
     except Exception as e:
