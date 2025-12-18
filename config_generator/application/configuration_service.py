@@ -23,7 +23,6 @@ class ConfigurationService:
     def convert_to_isis_net(self, loopback_ip):
         # Implement the logic to convert the loopback IP to an ISIS NET address
         # For example:
-        print(f"{loopback_ip=}")
         octets = loopback_ip.split(".")
-        isis_net = f"49.0001.{octets[0]:02x}{octets[1]:02x}.{octets[2]:02x}{octets[3]:02x}.00"
-        return isis_net
+        isis_net = f"49.0001.{int(octets[0]):02x}{int(octets[1]):02x}.{int(octets[2]):02x}{int(octets[3]):02x}.00"
+        return isis_net.upper()
