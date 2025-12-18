@@ -209,12 +209,17 @@ sudo -E containerlab destroy -t ~/lab/lab.clab.yml || true
 sudo -E containerlab deploy  -t ~/lab/lab.clab.yml --reconfigure
 ```
 
+## Captures 
+### Segment Routing 
+![sids](./docs/images/adj_prefix_sids.png)
+
 ## TODO:
 - [ ] add multiple topologies
   - [ ] base IP setup between devices
   - [ ] ISIS as IGP 
   - [ ] OSPF as IGP 
-  - [ ] Baisc RSVP/MPLS with an IGP
+  - [ ] Baisc LDP/MPLS with an IGP
   - [ ] Segment Routing with MPLS
   - [ ] Segment Routing with IPv6
-  - [ ] fix hostname issue with get_device_info() func
+- [x] fix hostname issue with get_device_info() func
+

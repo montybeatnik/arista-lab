@@ -21,9 +21,11 @@ def main():
         "mpls": "mpls.j2"
     }
 
-    configurations = configuration_service.generate_configurations(templates["mpls"])
-    for config in configurations:
-        device_connector.apply_configuration(config.device, config.config)
+    for tmpl in templates:
+        configurations = configuration_service.generate_configurations(tmpl)
+        for config in configurations:
+            device_connector.apply_configuration(config.device, config.config)
+
 
 if __name__ == "__main__":
     main()
