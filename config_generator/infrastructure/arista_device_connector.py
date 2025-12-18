@@ -48,7 +48,7 @@ class AristaDeviceConnector:
         auth = (device.username, device.password)
         headers = {"Content-Type": "application/json"}
 
-        commands = ["enable", "configure"] + config.splitlines() + ["end"]
+        commands = ["enable", "configure"] + config.splitlines() + ["end", "wr mem"]
 
         print(f"applying cfg to {device.hostname}")
         print(f"{commands=}")
