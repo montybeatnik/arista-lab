@@ -29,3 +29,6 @@ update_python_deps:
 
 done_with_py_venv:
 	deactivate
+
+db_shell:
+	sudo docker-compose exec db psql -U username device_inventory

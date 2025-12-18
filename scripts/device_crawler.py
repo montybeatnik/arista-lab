@@ -8,9 +8,12 @@ def get_containerlab_ips(topology_file):
         output = subprocess.check_output(["sudo", "containerlab", "inspect", "-t", topology_file]).decode("utf-8")
         ips = []
         for line in output.splitlines():
-            match = re.search(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s*$", line)
-            if match:
-                ips.append(match.group(1))
+            if "172." in line:
+                parts = line.split()
+                for part in parts:
+                    if part.startswith("172."):
+                        ips.append(part)
+                        break
         return ips
     except subprocess.CalledProcessError as e:
         print(f"Failed to run containerlab inspect: {str(e)}")
