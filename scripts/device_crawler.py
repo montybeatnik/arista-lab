@@ -67,7 +67,7 @@ def main():
     )
     ips = get_containerlab_ips("lab.clab.yml")
     for ip in ips:
-        net_connect = connect_to_device(ip, "username", "password")
+        net_connect = connect_to_device(ip, "admin", "admin") #TODO: lab but these should be somewhere else
         if net_connect:
             hostname, loopback_ip = get_device_info(net_connect)
             if hostname and loopback_ip:
