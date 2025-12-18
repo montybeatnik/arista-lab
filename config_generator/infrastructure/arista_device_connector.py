@@ -12,6 +12,8 @@ class AristaDeviceConnector:
             "ip": device.ip_address,
             "username": device.username,
             "password": device.password,
+            "use_keys": False,
+            "allow_agent": False
         }
         with ConnectHandler(**device_config) as net_connect:
             output = net_connect.send_command("show ip int lo0")
