@@ -36,7 +36,11 @@ def connect_to_device(ip, username, password):
 def get_device_info(net_connect):
     try:
         output = net_connect.send_command("show hostname")
-        hostname = output.strip()
+        match = re.search(r"Hostname:\s*(\S+)", output)
+        if match:
+            hostname = match.group(1)
+        else:
+            hostname = None
         output = net_connect.send_command("show ip int lo0")
         loopback_ip = None
         for line in output.splitlines():
