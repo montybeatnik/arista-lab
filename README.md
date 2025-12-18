@@ -174,6 +174,22 @@ sudo docker exec -it clab-evpn-rdma-fabric-gpu3 sh -lc 'ip link set eth1 mtu 500
 sudo docker exec -it clab-evpn-rdma-fabric-gpu4 sh -lc 'ip link set eth1 mtu 500'
 ```
 
+## Wireshark Capture
+### To run sudo run 
+```bash
+sudo visudo 
+# add this line to the bottom
+${USER}   ALL=(ALL) NOPASSWD: ALL
+## where is your username; for example:
+# chern    ALL=(ALL) NOPASSWD: ALL
+```
+
+```bash
+ssh {VM_IP} "ip netns exec clab-evpn-rdma-fabric-leaf1 tcpdump -U -nni eth1 -w -" | wireshark -k -i -
+# ssh 10.0.0.215 "sudo ip netns exec clab-evpn-rdma-fabric-leaf1 tcpdump -U -nni eth1 -w -" | wireshark -k -i -
+```
+
+
 ```
 leaf1#show vxlan config-sanity
 ! Your configuration contains warnings. This does not mean misconfigurations. But you may wish to re-check your configurations.
