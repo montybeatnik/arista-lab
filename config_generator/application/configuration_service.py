@@ -12,7 +12,6 @@ class ConfigurationService:
         devices = self.device_repository.get_devices()
         configurations = []
         for device in devices:
-            print(f"DEBUG: {device=}")
             # loopback_ip = self.device_connector.get_loopback_ip(device)
             isis_net = self.convert_to_isis_net(device.loopback_ip)
             # template = self.template_env.get_template("config.j2")

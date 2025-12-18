@@ -35,7 +35,8 @@ class AristaDeviceConnector:
             "password": device.password,
             "use_keys": False,
             "allow_agent": False,
-            "read_timeout": 30 
+            "conn_timeout": 10,
+            # "read_timeout": 30 
         }
         with ConnectHandler(**device_config) as net_connect:
             net_connect.send_config_set(config.splitlines())
