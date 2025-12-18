@@ -17,10 +17,8 @@ def main():
     configuration_service = ConfigurationService(template_env, device_repository, device_connector)
 
     configurations = configuration_service.generate_configurations()
-    for d in configurations:
-        print(d.config)
-    # for config in configurations:
-    #     device_connector.apply_configuration(config.device, config.config)
+    for config in configurations:
+        device_connector.apply_configuration(config.device, config.config)
 
 if __name__ == "__main__":
     main()
