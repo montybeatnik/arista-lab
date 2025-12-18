@@ -8,7 +8,7 @@ def main():
     db_connection = psycopg2.connect(
         host="localhost",
         database="device_inventory",
-        user="username",
+        user="lab",
         password="password"
     )
     device_repository = PostgresDeviceRepository(db_connection)

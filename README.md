@@ -217,4 +217,4 @@ sudo -E containerlab deploy  -t ~/lab/lab.clab.yml --reconfigure
   - [ ] Baisc RSVP/MPLS with an IGP
   - [ ] Segment Routing with MPLS
   - [ ] Segment Routing with IPv6
-  
+  - [ ] fix hostname issue with get_device_info() func

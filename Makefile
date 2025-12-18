@@ -32,3 +32,7 @@ done_with_py_venv:
 
 db_shell:
 	sudo docker-compose exec db psql -U username device_inventory
+
+db_create_user:
+    docker exec -i db psql -U username device_inventory -c "CREATE ROLE lab WITH PASSWORD 'password';"
+    docker exec -i db psql -U username device_inventory -c "ALTER ROLE lab WITH SUPERUSER;"
