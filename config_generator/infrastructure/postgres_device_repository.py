@@ -8,7 +8,7 @@ class PostgresDeviceRepository:
     def get_devices(self):
         devices = []
         with self.db_connection.cursor() as cursor:
-            cursor.execute("SELECT hostname, ip_address, loopback_ip FROM devices")
+            cursor.execute("SELECT hostname, ip_address, loopback_ip, username, password FROM devices")
             for row in cursor.fetchall():
                 devices.append(Device(*row))
         return devices
