@@ -21,8 +21,9 @@ fix_acl_perm_issue:
 	sudo -E containerlab deploy   -t ~/lab/lab.clab.yml --reconfigure
 
 update_python_deps:
+	sudo apt install python3.12-venv -y
 	sudo apt install python3-pip
-	python -m venv venv
+	python3 -m venv venv
 	source venv/bin/activate
 	pip install -r requirements.txt
 
