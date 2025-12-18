@@ -47,11 +47,11 @@ def get_device_info(net_connect):
             if "Internet address" in line:
                 loopback_ip = line.split("is ")[1].strip().split("/")[0]
                 break
-        output = net_connect.send_command("show lldp neighbors detail")
+        output = net_connect.send_command("show lldp neighbors")
         infrastructure_interfaces = []
         for line in output.splitlines():
-            if "Interface" in line and "Management0" not in line:
-                interface_name = line.split(":")[1].strip()
+            if "Ethernet" in line and "Management0" not in line:
+                interface_name = line.split()[0].strip()
                 infrastructure_interfaces.append(interface_name)
         # Remove duplicates
         infrastructure_interfaces = list(set(infrastructure_interfaces))
