@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 @dataclass
 class Device:
@@ -7,3 +8,4 @@ class Device:
     loopback_ip: str
     username: str
     password: str
+    infrastructure_interfaces: List[str]
