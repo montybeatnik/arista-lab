@@ -15,7 +15,8 @@ class ConfigurationService:
             print(f"DEBUG: {device=}")
             # loopback_ip = self.device_connector.get_loopback_ip(device)
             isis_net = self.convert_to_isis_net(device.loopback_ip)
-            template = self.template_env.get_template("config.j2")
+            # template = self.template_env.get_template("config.j2")
+            template = self.template_env.get_template("isis.j2")
             config = template.render(device=device, isis_net=isis_net)
             configurations.append(Configuration(device, config))
         return configurations
