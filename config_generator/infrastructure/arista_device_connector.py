@@ -49,6 +49,9 @@ class AristaDeviceConnector:
         headers = {"Content-Type": "application/json"}
 
         commands = ["enable", "configure"] + config.splitlines() + ["end"]
+
+        print(f"applying cfg to {device.hostname}")
+        print(f"{commands=}")
         payload = {
             "jsonrpc": "2.0",
             "method": "runCmds",
