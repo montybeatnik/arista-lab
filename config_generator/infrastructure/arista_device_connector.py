@@ -43,7 +43,7 @@ class AristaDeviceConnector:
     #     with ConnectHandler(**device_config) as net_connect:
     #         net_connect.send_config_set(config.splitlines())
 
-    def apply_configuration(device, config):
+    def apply_configuration(self, device, config):
         url = f"https://{device.ip_address}/command-api"
         auth = (device.username, device.password)
         headers = {"Content-Type": "application/json"}
