@@ -47,15 +47,23 @@ def get_device_info(net_connect):
             if "Internet address" in line:
                 loopback_ip = line.split("is ")[1].strip().split("/")[0]
                 break
-        return hostname, loopback_ip
+        output = net_connect.send_command("show lldp neighbors detail")
+        infrastructure_interfaces = []
+        for line in output.splitlines():
+            if "Interface" in line and "Management0" not in line:
+                interface_name = line.split(":")[1].strip()
+                infrastructure_interfaces.append(interface_name)
+        # Remove duplicates
+        infrastructure_interfaces = list(set(infrastructure_interfaces))
+        return hostname, loopback_ip, infrastructure_interfaces            
     except Exception as e:
         print(f"Failed to retrieve device info: {str(e)}")
-        return None, None
+        return None, None, None
 
-def populate_db(db_connection, ip, hostname, loopback_ip):
+def populate_db(db_connection, ip, hostname, loopback_ip, infrastructure_interfaces):
     try:
         with db_connection.cursor() as cursor:
-            cursor.execute("INSERT INTO devices (ip_address, hostname, loopback_ip, username, password) VALUES (%s, %s, %s, 'admin', 'admin') ON CONFLICT (ip_address) DO UPDATE SET hostname = %s, loopback_ip = %s", (ip, hostname, loopback_ip, hostname, loopback_ip))
+            cursor.execute("INSERT INTO devices (ip_address, hostname, loopback_ip, username, password, infrastructure_interfaces) VALUES (%s, %s, %s, 'admin', 'admin', %s) ON CONFLICT (ip_address) DO UPDATE SET hostname = %s, loopback_ip = %s", (ip, hostname, loopback_ip, infrastructure_interfaces, hostname, loopback_ip))
         db_connection.commit()
         print(f"Populated DB with device {ip}")
     except Exception as e:
@@ -73,9 +81,9 @@ def main():
     for ip in ips:
         net_connect = connect_to_device(ip, "admin", "admin") #TODO: lab but these should be somewhere else
         if net_connect:
-            hostname, loopback_ip = get_device_info(net_connect)
+            hostname, loopback_ip, infrastructure_interfaces = get_device_info(net_connect)
             if hostname and loopback_ip:
-                populate_db(db_connection, ip, hostname, loopback_ip)
+                populate_db(db_connection, ip, hostname, loopback_ip, infrastructure_interfaces)
             net_connect.disconnect()
     db_connection.close()
 

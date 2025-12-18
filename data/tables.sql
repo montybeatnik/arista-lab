@@ -6,3 +6,6 @@ CREATE TABLE devices (
     username VARCHAR(15),
     password VARCHAR(15)
 );
+
+ALTER TABLE devices
+ADD COLUMN infrastructure_interfaces TEXT[];
