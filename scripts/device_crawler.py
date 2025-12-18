@@ -43,6 +43,7 @@ def get_device_info(net_connect):
             if "IP Address" in line:
                 loopback_ip = line.split(":")[1].strip().split("/")[0]
                 break
+        print(f"get_device_info(): {hostname=}, {loopback_ip=}")
         return hostname, loopback_ip
     except Exception as e:
         print(f"Failed to retrieve device info: {str(e)}")
