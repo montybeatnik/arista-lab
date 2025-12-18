@@ -55,7 +55,7 @@ def get_device_info(net_connect):
 def populate_db(db_connection, ip, hostname, loopback_ip):
     try:
         with db_connection.cursor() as cursor:
-            cursor.execute("INSERT INTO devices (ip_address, hostname, loopback_ip, username, password) VALUES (%s, %s, %s, 'admin', 'password') ON CONFLICT (ip_address) DO UPDATE SET hostname = %s, loopback_ip = %s", (ip, hostname, loopback_ip, hostname, loopback_ip))
+            cursor.execute("INSERT INTO devices (ip_address, hostname, loopback_ip, username, password) VALUES (%s, %s, %s, 'admin', 'admin') ON CONFLICT (ip_address) DO UPDATE SET hostname = %s, loopback_ip = %s", (ip, hostname, loopback_ip, hostname, loopback_ip))
         db_connection.commit()
         print(f"Populated DB with device {ip}")
     except Exception as e:

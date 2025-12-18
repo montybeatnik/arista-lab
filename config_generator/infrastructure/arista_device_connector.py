@@ -24,7 +24,6 @@ class AristaDeviceConnector:
                         loopback_ip = line.split(":")[1].strip().split("/")[0]
                         return loopback_ip
         except Exception as e:
-            print(device)
             print(f"failed to connect: {e}")
 
     def apply_configuration(self, device, config):

@@ -12,6 +12,7 @@ class ConfigurationService:
         devices = self.device_repository.get_devices()
         configurations = []
         for device in devices:
+            print(f"DEBUG: {device=}")
             loopback_ip = self.device_connector.get_loopback_ip(device)
             isis_net = self.convert_to_isis_net(loopback_ip)
             template = self.template_env.get_template("config.j2")
@@ -22,6 +23,7 @@ class ConfigurationService:
     def convert_to_isis_net(self, loopback_ip):
         # Implement the logic to convert the loopback IP to an ISIS NET address
         # For example:
+        print(f"{loopback_ip=}")
         octets = loopback_ip.split(".")
         isis_net = f"49.0001.{octets[0]:02x}{octets[1]:02x}.{octets[2]:02x}{octets[3]:02x}.00"
         return isis_net
