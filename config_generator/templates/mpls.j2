@@ -9,10 +9,10 @@ router isis ISIS_BASE
       no shutdown
 !
 mpls ldp
-    router-id Loopback0
-    no shutdown
+   router-id interface Loopback0
+   no shutdown
 {% for interface in device.infrastructure_interfaces %}
 interface {{ interface }}
-    mpls ldp interface
+   mpls ldp interface
 {% endfor %}
 end
