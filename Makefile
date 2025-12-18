@@ -19,3 +19,12 @@ fix_acl_perm_issue:
 	# 4) Redeploy (note the -E to keep the env var)
 	sudo -E containerlab destroy  -t ~/lab/lab.clab.yml || true
 	sudo -E containerlab deploy   -t ~/lab/lab.clab.yml --reconfigure
+
+update_python_deps:
+	sudo apt install python3-pip
+	python -m venv venv
+	source venv/bin/activate
+	pip install -r requirements.txt
+
+done_with_py_venv:
+	deactivate
