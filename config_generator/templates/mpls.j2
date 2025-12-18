@@ -1,0 +1,11 @@
+interface Loopback0
+   node-segment ipv4 index 0
+   isis instance ISIS_BASE
+   isis passive
+!
+mpls ip
+router isis ISIS_BASE
+   segment-routing mpls
+      no shutdown
+!
+end

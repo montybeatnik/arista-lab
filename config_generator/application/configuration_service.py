@@ -8,14 +8,14 @@ class ConfigurationService:
         self.device_repository = device_repository
         self.device_connector = device_connector
 
-    def generate_configurations(self):
+    def generate_configurations(self, tmpl: str):
         devices = self.device_repository.get_devices()
         configurations = []
         for device in devices:
             # loopback_ip = self.device_connector.get_loopback_ip(device)
             isis_net = self.convert_to_isis_net(device.loopback_ip)
             # template = self.template_env.get_template("config.j2")
-            template = self.template_env.get_template("isis.j2")
+            template = self.template_env.get_template(tmpl)
             config = template.render(device=device, isis_net=isis_net)
             configurations.append(Configuration(device, config))
         return configurations

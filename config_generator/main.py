@@ -16,7 +16,12 @@ def main():
     device_connector = AristaDeviceConnector()
     configuration_service = ConfigurationService(template_env, device_repository, device_connector)
 
-    configurations = configuration_service.generate_configurations()
+    templates = {
+        "isis": "isis.j2",
+        "mpls": "mpls.j2"
+    }
+
+    configurations = configuration_service.generate_configurations(templates["mpls"])
     for config in configurations:
         device_connector.apply_configuration(config.device, config.config)
 
