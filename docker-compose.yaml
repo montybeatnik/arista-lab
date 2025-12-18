@@ -1,0 +1,23 @@
+version: "3"
+services:
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_NAME=device_inventory
+      - DB_USER=username
+      - DB_PASSWORD=password
+
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_DB=device_inventory
+      - POSTGRES_USER=username
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:
