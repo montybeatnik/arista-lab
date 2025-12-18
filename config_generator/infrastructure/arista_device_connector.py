@@ -48,7 +48,7 @@ class AristaDeviceConnector:
         auth = (device.username, device.password)
         headers = {"Content-Type": "application/json"}
 
-        commands = config.splitlines()
+        commands = ["enable", "configure"] + config.splitlines() + ["end"]
         payload = {
             "jsonrpc": "2.0",
             "method": "runCmds",
