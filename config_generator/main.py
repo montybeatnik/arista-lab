@@ -23,7 +23,7 @@ def main():
     }
 
     for tmpl in templates:
-        configurations = configuration_service.generate_configurations(tmpl)
+        configurations = configuration_service.generate_configurations(templates[tmpl])
         for config in configurations:
             device_connector.apply_configuration(config.device, config.config)
 
