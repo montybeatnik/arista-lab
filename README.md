@@ -1,11 +1,22 @@
 # Arista CLAB Lab
 If you want to experiment with a protocol or technology in the networking space, this lab setup can help quickly build the scaffolding. 
 
-It leverages containerlag, which uses docker under the hood to spin up nodes. You define the nodes and edges with a manifest file declared in YAML. 
+It leverages containerlab, which uses docker under the hood to spin up nodes. You define the nodes and edges with a manifest file declared in YAML. 
 
 - [containlab](https://containerlab.dev)
 
 There is some manual setup if you're using VirtualBox. If you're using multipass, it becomes much easier. 
+
+## Setup High Level Overview
+You'll need to do the following:
+1. Download the depenencies
+3. If using VirtualBox, 
+   1. Spin up a VM with a script.
+      1. Note, you'll have to "unmount" the drive used for initial boot/os install. 
+   2. SCP the EOS image onto the VM. 
+      1. The Multipass solution mounts the directory on the host into the VM. 
+4. Pull down the repo onto the VM and run the setup script.
+5. Have fun with the lab! 
 
 ## What we're building
 ![topo](docs/images/topo.png)
@@ -42,18 +53,7 @@ There is some manual setup if you're using VirtualBox. If you're using multipass
    5. Select the Ubuntu Server ISO you downloaded earlier.
 3. Walk through the setup of your machine prompt by prompt. 
 
-### Walkthfough with images
-- ![create-new-vm-1](./docs/images/create-vm-1.png)
-- ![create-new-vm-2](./docs/images/create-vm-2-memory.png)
-- ![create-new-vm-3](./docs/images/create-vm-3-hd.png)
-- ![create-new-vm-4](./docs/images/create-vm-4-iso.png)
-- ![remove-media](./docs/images/remmove-media.png)
-- ![power-off](./docs/images/power-off.png)
-- ![remove-drive](./docs/images/remove-drive.png)
-  - click the disk with the red X. 
-  - Rick click on the VM and go to start. 
-  - Boot into the next disk. 
-  
+* If you want to see screenshots: [image-walkthrough](docs/image_walkthrough.md). 
 
 Once the VM is up. 
 1. disconnect from the VPN. 
