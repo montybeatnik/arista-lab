@@ -3,3 +3,8 @@ ipv6 unicast-routing
 interface {{ interface }}
    ipv6 enable
 {% endfor %}
+router isis ISIS_BASE
+   net {{ isis_net }}
+   !
+   address-family ipv6 unicast
+   !
