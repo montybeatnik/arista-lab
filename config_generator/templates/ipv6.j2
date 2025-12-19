@@ -1,4 +1,4 @@
-ipv6 enable
+ipv6 unicast-routing
 {% for interface in device.infrastructure_interfaces %}
 interface {{ interface }}
    ipv6 enable
