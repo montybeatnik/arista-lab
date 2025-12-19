@@ -18,7 +18,8 @@ def main():
 
     templates = {
         "isis": "isis.j2",
-        "mpls": "mpls.j2"
+        "mpls": "mpls.j2",
+        "ipv6": "ipv6.j2"
     }
 
     for tmpl in templates:

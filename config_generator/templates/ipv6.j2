@@ -1,0 +1,5 @@
+{% for interface in device.infrastructure_interfaces %}
+interface {{ interface }}
+   ipv6 enable
+{% endfor %}
+end
